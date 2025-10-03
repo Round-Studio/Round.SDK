@@ -1,4 +1,6 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 
 namespace Round.SDK.Logger;
@@ -58,7 +60,66 @@ public class ConsoleRedirector : IDisposable
     }
 
     /// <summary>
-    /// 自定义TextWriter，为每行添加线程名和时间戳
+    /// 获取调用位置信息
+    /// </summary>
+    private static string GetCallerLocation()
+    {
+        try
+        {
+            // 创建堆栈跟踪，跳过足够的帧数来找到真正的调用者
+            StackTrace stackTrace = new StackTrace(fNeedFileInfo: true);
+
+            // 遍历堆栈帧，找到第一个不在 ThreadAwareTextWriter 中的调用者
+            for (int i = 0; i < stackTrace.FrameCount; i++)
+            {
+                StackFrame frame = stackTrace.GetFrame(i);
+                MethodBase method = frame?.GetMethod();
+
+                if (method == null) continue;
+
+                // 跳过 ThreadAwareTextWriter 和 System.IO 相关的内部方法
+                Type declaringType = method.DeclaringType;
+                if (declaringType == null) continue;
+
+                string typeName = declaringType.FullName;
+                if (typeName != null &&
+                    (typeName.Contains(nameof(ThreadAwareTextWriter)) ||
+                     typeName.Contains(nameof(ConsoleRedirector)) ||
+                     typeName.StartsWith("System.IO") ||
+                     typeName.StartsWith("System.Console")))
+                {
+                    continue;
+                }
+
+                // 找到真正的调用者
+                string className = declaringType.Name;
+                string methodName = method.Name;
+                string fileName = frame.GetFileName();
+                int lineNumber = frame.GetFileLineNumber();
+
+                if (!string.IsNullOrEmpty(fileName) && lineNumber > 0)
+                {
+                    string shortFileName = Path.GetFileName(fileName);
+                    // return $"{className}.{methodName}({shortFileName}:{lineNumber})";
+
+                    return $"{shortFileName}:{lineNumber}";
+                }
+                else
+                {
+                    return $"{className}.{methodName}";
+                }
+            }
+        }
+        catch
+        {
+            // 忽略异常，返回默认值
+        }
+
+        return "Unknown";
+    }
+
+    /// <summary>
+    /// 自定义TextWriter，为每行添加线程名、时间戳和调用位置
     /// </summary>
     private class ThreadAwareTextWriter : TextWriter
     {
@@ -74,36 +135,18 @@ public class ConsoleRedirector : IDisposable
             _timestampFormat = timestampFormat;
         }
 
-        public override Encoding Encoding => Encoding.UTF8; // 改为返回 UTF-8 编码
+        public override Encoding Encoding => Encoding.UTF8;
 
         public override void Write(char value)
         {
             if (value == '\n')
             {
-                int threadId = Thread.CurrentThread.ManagedThreadId;
-                string threadName = GetThreadName(threadId);
-                var timestamp = DateTime.Now.ToString(_timestampFormat);
-                
-                _innerWriter.Write($"[{timestamp}][TID {threadId}][{threadName}] {_lineBuffer}{value}");
-                _lineBuffer.Clear();
+                FlushLine();
             }
             else if (value != '\r')
             {
                 _lineBuffer.Append(value);
             }
-        }
-
-        private string GetThreadName(int threadId)
-        {
-            if (_threadNames.TryGetValue(threadId, out var name))
-            {
-                return name;
-            }
-            
-            // 自动为未命名的线程生成名称
-            string newName = $"Undefined Thread-{threadId}";
-            _threadNames.TryAdd(threadId, newName);
-            return newName;
         }
 
         public override void Write(string value)
@@ -114,12 +157,6 @@ public class ConsoleRedirector : IDisposable
             {
                 Write(c);
             }
-            Console.SetOut(_orgwriter);
-            int threadId = Thread.CurrentThread.ManagedThreadId;
-            string threadName = GetThreadName(threadId);
-            var timestamp = DateTime.Now.ToString(_timestampFormat);
-            Console.WriteLine($"[{timestamp}][TID {threadId}][{threadName}] {_lineBuffer}");
-            Console.SetOut(this);
         }
 
         public override void WriteLine(string value)
@@ -128,17 +165,51 @@ public class ConsoleRedirector : IDisposable
             Write('\n');
         }
 
-        public override void Flush()
+        /// <summary>
+        /// 刷新当前行并添加格式
+        /// </summary>
+        private void FlushLine()
         {
             if (_lineBuffer.Length > 0)
             {
                 int threadId = Thread.CurrentThread.ManagedThreadId;
                 string threadName = GetThreadName(threadId);
                 var timestamp = DateTime.Now.ToString(_timestampFormat);
-                _innerWriter.Write($"[{timestamp}][{threadName}] {_lineBuffer}");
+                string callerLocation = GetCallerLocation();
+                
+                string formattedLine = $"[{timestamp}][TID {threadId}][{threadName}][{callerLocation}]: {_lineBuffer}";
+                
+                Console.SetOut(_orgwriter);
+                Console.WriteLine(formattedLine);
+                Console.SetOut(this);
+                
+                _innerWriter.Write(formattedLine);
                 _lineBuffer.Clear();
             }
+            
+            _innerWriter.Write('\n');
+        }
+
+        public override void Flush()
+        {
+            if (_lineBuffer.Length > 0)
+            {
+                FlushLine();
+            }
             _innerWriter.Flush();
+        }
+
+        private string GetThreadName(int threadId)
+        {
+            if (_threadNames.TryGetValue(threadId, out var name))
+            {
+                return name;
+            }
+            
+            // 自动为未命名的线程生成名称
+            string newName = $"Thread-{threadId}";
+            _threadNames.TryAdd(threadId, newName);
+            return newName;
         }
     }
 }
