@@ -22,6 +22,26 @@ public class PlugLoader
     /// 已加载的程序集缓存
     /// </summary>
     private List<Assembly> _loadedAssemblies = new List<Assembly>();
+    
+    /// <summary>
+    /// 插件包配置信息
+    /// </summary>
+    public PackConfig PackConfig { get; private set; }
+    
+    /// <summary>
+    /// 插件实例
+    /// </summary>
+    public object PluginInstance { get; private set; }
+    
+    /// <summary>
+    /// 插件包路径
+    /// </summary>
+    public string PluginPackagePath { get; private set; }
+    
+    /// <summary>
+    /// 是否已加载
+    /// </summary>
+    public bool IsLoaded { get; private set; }
 
     public PlugLoader(Type pluginType)
     {
@@ -40,6 +60,11 @@ public class PlugLoader
     /// <param name="pluginPackagePath">插件包路径 (.rplck 文件)</param>
     public object Load(string pluginPackagePath)
     {
+        if (IsLoaded)
+        {
+            throw new InvalidOperationException("该PlugLoader实例已加载过插件包，请创建新的实例来加载其他插件包");
+        }
+
         if (string.IsNullOrEmpty(pluginPackagePath))
         {
             throw new ArgumentException("插件包路径不能为空");
@@ -52,17 +77,23 @@ public class PlugLoader
 
         try
         {
+            PluginPackagePath = pluginPackagePath;
+            
             // 1. 解压插件包
             string extractDir = ExtractPluginPackage(pluginPackagePath);
             
             // 2. 读取插件配置
-            var packConfig = ReadPackConfig(extractDir);
+            PackConfig = ReadPackConfig(extractDir);
             
             // 3. 加载依赖的DLL文件
-            LoadDependencies(extractDir, packConfig.BodyFile);
+            LoadDependencies(extractDir, PackConfig.BodyFile);
             
             // 4. 加载插件主体
-            return LoadPluginBody(extractDir, packConfig.BodyFile);
+            PluginInstance = LoadPluginBody(extractDir, PackConfig.BodyFile);
+            
+            IsLoaded = true;
+            
+            return PluginInstance;
         }
         catch (Exception ex)
         {
@@ -105,8 +136,6 @@ public class PlugLoader
             throw new FileNotFoundException($"插件包配置文件不存在: {configPath}");
         }
 
-        // 这里需要根据你的 ConfigEntity 实现来读取配置
-        // 假设你有一个方法来读取JSON配置
         var config = LoadConfig<PackConfig>(configPath);
         
         if (string.IsNullOrEmpty(config.BodyFile))
@@ -194,14 +223,12 @@ public class PlugLoader
     }
 
     /// <summary>
-    /// 加载配置文件的辅助方法（需要根据你的实际实现调整）
+    /// 加载配置文件的辅助方法
     /// </summary>
     private T LoadConfig<T>(string configPath) where T : new()
     {
         try
         {
-            // 这里需要根据你的 ConfigEntity 实现来调整
-            // 假设你有一个 ConfigEntity 类可以加载配置
             var configEntity = new ConfigEntity<T>(configPath);
             configEntity.Load();
             return configEntity.Data;
@@ -211,6 +238,66 @@ public class PlugLoader
             Console.WriteLine($"读取配置文件失败 {configPath}: {ex.Message}");
             throw;
         }
+    }
+
+    /// <summary>
+    /// 获取插件包信息（不依赖插件实例）
+    /// </summary>
+    public PackConfig GetPackConfig()
+    {
+        if (!IsLoaded)
+        {
+            throw new InvalidOperationException("插件尚未加载，请先调用Load方法");
+        }
+        
+        return PackConfig;
+    }
+
+    /// <summary>
+    /// 获取属性值
+    /// </summary>
+    private object GetPropertyValue(object obj, string propertyName)
+    {
+        var property = obj.GetType().GetProperty(propertyName);
+        return property?.GetValue(obj);
+    }
+
+    /// <summary>
+    /// 执行插件方法
+    /// </summary>
+    public void ExecuteMethod(string methodName, params object[] parameters)
+    {
+        if (!IsLoaded || PluginInstance == null)
+        {
+            throw new InvalidOperationException("插件尚未加载，请先调用Load方法");
+        }
+
+        try
+        {
+            var method = PluginInstance.GetType().GetMethod(methodName);
+            if (method != null)
+            {
+                method.Invoke(PluginInstance, parameters);
+                Console.WriteLine($"已执行插件 {PluginInstance.GetType().Name} 的方法 {methodName}");
+            }
+            else
+            {
+                Console.WriteLine($"插件 {PluginInstance.GetType().Name} 没有找到方法 {methodName}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"执行插件 {PluginInstance.GetType().Name} 的方法 {methodName} 时出错: {ex.Message}");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 初始化插件
+    /// </summary>
+    public void InitializePlugin()
+    {
+        ExecuteMethod("Initialize");
     }
 
     /// <summary>
@@ -227,85 +314,14 @@ public class PlugLoader
             }
             
             _loadedAssemblies.Clear();
+            PluginInstance = null;
+            PackConfig = null;
+            IsLoaded = false;
+            PluginPackagePath = null;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"清理临时文件失败: {ex.Message}");
         }
-    }
-
-    /// <summary>
-    /// 获取插件信息
-    /// </summary>
-    public PluginInfo GetPluginInfo(string pluginPackagePath)
-    {
-        var plugin = Load(pluginPackagePath);
-        
-        if (plugin != null)
-        {
-            try
-            {
-                var info = new PluginInfo
-                {
-                    Type = plugin.GetType(),
-                    Name = GetPropertyValue(plugin, "Name") as string ?? "Unknown",
-                    Description = GetPropertyValue(plugin, "Description") as string ?? string.Empty,
-                    Version = GetPropertyValue(plugin, "Version") as string ?? "1.0.0",
-                    Author = GetPropertyValue(plugin, "Author") as string ?? "Unknown"
-                };
-                
-                return info;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"获取插件信息失败 {plugin.GetType().FullName}: {ex.Message}");
-            }
-        }
-        
-        return null;
-    }
-
-    /// <summary>
-    /// 获取属性值
-    /// </summary>
-    private object GetPropertyValue(object obj, string propertyName)
-    {
-        var property = obj.GetType().GetProperty(propertyName);
-        return property?.GetValue(obj);
-    }
-
-    /// <summary>
-    /// 执行插件方法
-    /// </summary>
-    public void ExecuteMethod(object plugin, string methodName, params object[] parameters)
-    {
-        if (plugin != null)
-        {
-            try
-            {
-                var method = plugin.GetType().GetMethod(methodName);
-                if (method != null)
-                {
-                    method.Invoke(plugin, parameters);
-                    Console.WriteLine($"已执行插件 {plugin.GetType().Name} 的方法 {methodName}");
-                }
-                else
-                {
-                    Console.WriteLine($"插件 {plugin.GetType().Name} 没有找到方法 {methodName}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"执行插件 {plugin.GetType().Name} 的方法 {methodName} 时出错: {ex.Message}");
-            }
-        }
-    }
-
-    /// <summary>
-    /// 初始化插件
-    /// </summary>
-    public void InitializePlugin(object plugin)
-    {
-        ExecuteMethod(plugin, "Initialize");
     }
 }
