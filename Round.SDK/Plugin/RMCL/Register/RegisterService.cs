@@ -12,7 +12,7 @@ public class RegisterService
 
     public static void RegisterBottomBarItem(BottomBarItemInfo info)
     {
-        Console.WriteLine($"注册导航项 {info.Tag}");
+        Console.WriteLine($@"注册导航项 {info.Tag}");
         API.RegisterBottomBarItem.Invoke(info);
     }
 }

@@ -97,7 +97,7 @@ public class PlugLoader
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"加载插件包失败 {pluginPackagePath}: {ex.Message}");
+            Console.WriteLine($@"加载插件包失败 {pluginPackagePath}: {ex.Message}");
             throw;
         }
     }
@@ -119,7 +119,7 @@ public class PlugLoader
         
         // 解压ZIP文件
         ZipFile.ExtractToDirectory(pluginPackagePath, tempExtractDir);
-        Console.WriteLine($"插件包已解压到: {tempExtractDir}");
+        Console.WriteLine($@"插件包已解压到: {tempExtractDir}");
         
         return tempExtractDir;
     }
@@ -143,7 +143,7 @@ public class PlugLoader
             throw new InvalidOperationException("插件包配置中未指定主体文件");
         }
         
-        Console.WriteLine($"读取插件配置: {config.PackName} v{config.PackVersion}");
+        Console.WriteLine($@"读取插件配置: {config.PackName} v{config.PackVersion}");
         return config;
     }
 
@@ -171,11 +171,11 @@ public class PlugLoader
                 // 加载程序集到当前应用程序域
                 var assembly = Assembly.LoadFrom(dllPath);
                 _loadedAssemblies.Add(assembly);
-                Console.WriteLine($"已加载依赖: {Path.GetFileName(dllPath)}");
+                Console.WriteLine($@"已加载依赖: {Path.GetFileName(dllPath)}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"加载依赖失败 {dllPath}: {ex.Message}");
+                Console.WriteLine($@"加载依赖失败 {dllPath}: {ex.Message}");
             }
         }
     }
@@ -207,7 +207,7 @@ public class PlugLoader
             if (pluginType != null)
             {
                 var pluginInstance = Activator.CreateInstance(pluginType);
-                Console.WriteLine($"已加载插件主体: {pluginType.FullName}");
+                Console.WriteLine($@"已加载插件主体: {pluginType.FullName}");
                 return pluginInstance;
             }
             else
@@ -217,7 +217,7 @@ public class PlugLoader
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"加载插件主体失败 {bodyFilePath}: {ex.Message}");
+            Console.WriteLine($@"加载插件主体失败 {bodyFilePath}: {ex.Message}");
             throw;
         }
     }
@@ -235,7 +235,7 @@ public class PlugLoader
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"读取配置文件失败 {configPath}: {ex.Message}");
+            Console.WriteLine($@"读取配置文件失败 {configPath}: {ex.Message}");
             throw;
         }
     }
@@ -278,16 +278,16 @@ public class PlugLoader
             if (method != null)
             {
                 method.Invoke(PluginInstance, parameters);
-                Console.WriteLine($"已执行插件 {PluginInstance.GetType().Name} 的方法 {methodName}");
+                Console.WriteLine($@"已执行插件 {PluginInstance.GetType().Name} 的方法 {methodName}");
             }
             else
             {
-                Console.WriteLine($"插件 {PluginInstance.GetType().Name} 没有找到方法 {methodName}");
+                Console.WriteLine($@"插件 {PluginInstance.GetType().Name} 没有找到方法 {methodName}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"执行插件 {PluginInstance.GetType().Name} 的方法 {methodName} 时出错: {ex.Message}");
+            Console.WriteLine($@"执行插件 {PluginInstance.GetType().Name} 的方法 {methodName} 时出错: {ex.Message}");
             throw;
         }
     }
@@ -310,7 +310,7 @@ public class PlugLoader
             if (Directory.Exists(ExtractPath))
             {
                 Directory.Delete(ExtractPath, true);
-                Console.WriteLine("已清理临时插件文件");
+                Console.WriteLine(@"已清理临时插件文件");
             }
             
             _loadedAssemblies.Clear();
@@ -321,7 +321,7 @@ public class PlugLoader
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"清理临时文件失败: {ex.Message}");
+            Console.WriteLine($@"清理临时文件失败: {ex.Message}");
         }
     }
 }
