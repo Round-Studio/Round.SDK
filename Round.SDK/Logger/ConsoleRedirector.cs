@@ -7,11 +7,10 @@ namespace Round.SDK.Logger;
 
 public class ConsoleRedirector : IDisposable
 {
-    public static string FileName { get; private set; }
+    public static string? FileName { get; private set; } = String.Empty;
     
     private StreamWriter _writer;
     private TextWriter _originalOutput;
-    private readonly string _timestampFormat;
     private static readonly ConcurrentDictionary<int, string> _threadNames = new ConcurrentDictionary<int, string>();
 
     /// <summary>
@@ -26,8 +25,8 @@ public class ConsoleRedirector : IDisposable
             Directory.CreateDirectory(Path.GetDirectoryName(filePath));
         
         _originalOutput = Console.Out;
-        _timestampFormat = timestampFormat;
-        
+        var timestampFormat1 = timestampFormat;
+
         // 注册主线程名称
         RegisterThread(Thread.CurrentThread, "Main");
         
@@ -40,7 +39,7 @@ public class ConsoleRedirector : IDisposable
         // 设置控制台输出编码为 UTF-8
         Console.OutputEncoding = Encoding.UTF8;
         
-        Console.SetOut(new ThreadAwareTextWriter(_writer, _originalOutput, _timestampFormat));
+        Console.SetOut(new ThreadAwareTextWriter(_writer, _originalOutput, timestampFormat1));
     }
 
     /// <summary>
