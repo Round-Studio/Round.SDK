@@ -107,6 +107,7 @@ public class PlugLoader
     /// </summary>
     private string ExtractPluginPackage(string pluginPackagePath)
     {
+        ExtractPath = Path.Combine(ExtractPath, Guid.NewGuid().ToString().Replace("-", ""));
         string tempExtractDir = Path.Combine(ExtractPath, Path.GetFileNameWithoutExtension(pluginPackagePath));
         
         // 如果目录已存在，先删除
