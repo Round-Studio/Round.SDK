@@ -12,11 +12,11 @@ namespace Round.SDK.Plugin;
 public class PlugLoader
 {
     public Type PluginType { get; private set; }
-    
+
     /// <summary>
     /// 插件解压路径
     /// </summary>
-    public string ExtractPath { get; set; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins", "temp");
+    public string ExtractPath { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Templates),"RoundStudio","SDK","Plugin.Templates");
     
     /// <summary>
     /// 已加载的程序集缓存
