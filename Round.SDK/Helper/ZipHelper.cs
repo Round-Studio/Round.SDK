@@ -11,8 +11,23 @@ public class ZipHelper
         {
             File.Delete(zipPath);
         }
-        
+
         // 创建ZIP文件
         ZipFile.CreateFromDirectory(sourceFolder, zipPath);
+    }
+
+    public static void ExtractZipFile(string file, string extractDir)
+    {
+        // 如果目录已存在，先删除
+        if (Directory.Exists(extractDir))
+        {
+            Directory.Delete(extractDir, true);
+        }
+
+        Directory.CreateDirectory(extractDir);
+
+        // 解压ZIP文件
+        ZipFile.ExtractToDirectory(file, extractDir);
+        Console.WriteLine($@"插件包已解压到: {extractDir}");
     }
 }
