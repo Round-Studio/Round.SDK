@@ -16,4 +16,5 @@ public class PackConfig
     [JsonPropertyName("packLicense")] public string PackLicense { get; set; } = "";
     [JsonPropertyName("packLicenseUrl")] public string PackLicenseUrl { get; set; } = "";
     [JsonPropertyName("bodyFile")] public string BodyFile { get; set; } = "Project.dll";
+    [JsonIgnore] public string PackFile { get; set; }
 }
