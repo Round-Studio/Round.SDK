@@ -14,6 +14,13 @@ public class PluginFileInfoHelper
         ZipHelper.ExtractZipFile(filePath, ext);
 
         var jsonFile = Path.Combine(ext, "pack.json");
-        return JsonSerializer.Deserialize<PackConfig>(File.ReadAllText(jsonFile));
+        var result = JsonSerializer.Deserialize<PackConfig>(File.ReadAllText(jsonFile));
+
+        if (!string.IsNullOrEmpty(result.PackIconPath))
+        {
+            result.PackIconPath = Path.Combine(ext, "assets", "icon", result.PackIconPath);
+        }
+        
+        return result;
     }
 }
