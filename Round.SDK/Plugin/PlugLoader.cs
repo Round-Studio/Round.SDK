@@ -7,6 +7,7 @@ using System.Reflection;
 using Round.SDK.Entity;
 using Round.SDK.Entry;
 using Round.SDK.Helper;
+using Round.SDK.Helper.IO;
 
 namespace Round.SDK.Plugin;
 
@@ -83,7 +84,9 @@ public class PlugLoader
             PluginPackagePath = pluginPackagePath;
             
             // 1. 解压插件包
-            string extractDir = Path.Combine(ExtractPath, Guid.NewGuid().ToString().Replace("-", ""));
+            string extractDir = Path.Combine(ExtractPath,
+                FileHashCalculator.CalculateHash(PluginPackagePath, FileHashCalculator.HashType.MD5));
+            
             ZipHelper.ExtractZipFile(pluginPackagePath, extractDir);
             
             // 2. 读取插件配置

@@ -18,10 +18,10 @@ public class ZipHelper
 
     public static void ExtractZipFile(string file, string extractDir)
     {
-        // 如果目录已存在，先删除
+        // 如果目录已存在，退出
         if (Directory.Exists(extractDir))
         {
-            Directory.Delete(extractDir, true);
+            return;
         }
 
         Directory.CreateDirectory(extractDir);

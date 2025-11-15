@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Round.SDK.Entry;
+using Round.SDK.Helper.IO;
 
 namespace Round.SDK.Helper;
 
@@ -10,7 +11,7 @@ public class PluginFileInfoHelper
     
     public static PackConfig? GetFileInfo(string filePath)
     {
-        var ext = Path.Combine(TempPath, Guid.NewGuid().ToString().Replace("-", ""));
+        var ext = Path.Combine(TempPath, FileHashCalculator.CalculateHash(filePath, FileHashCalculator.HashType.MD5));
         ZipHelper.ExtractZipFile(filePath, ext);
 
         var jsonFile = Path.Combine(ext, "pack.json");
