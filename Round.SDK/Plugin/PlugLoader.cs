@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using Round.SDK.Entity;
 using Round.SDK.Entry;
+using Round.SDK.Helper;
 
 namespace Round.SDK.Plugin;
 
@@ -16,7 +17,9 @@ public class PlugLoader
     /// <summary>
     /// 插件解压路径
     /// </summary>
-    public string ExtractPath { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Templates),"RoundStudio","SDK","Plugin.Templates");
+    public string ExtractPath { get; set; } =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Templates), "RoundStudio", "SDK",
+            "Plugin.Templates");
     
     /// <summary>
     /// 已加载的程序集缓存
@@ -80,7 +83,8 @@ public class PlugLoader
             PluginPackagePath = pluginPackagePath;
             
             // 1. 解压插件包
-            string extractDir = ExtractPluginPackage(pluginPackagePath);
+            string extractDir = Path.Combine(ExtractPath, Guid.NewGuid().ToString().Replace("-", ""));
+            ZipHelper.ExtractZipFile(pluginPackagePath, extractDir);
             
             // 2. 读取插件配置
             PackConfig = ReadPackConfig(extractDir);
@@ -100,29 +104,6 @@ public class PlugLoader
             Console.WriteLine($@"加载插件包失败 {pluginPackagePath}: {ex.Message}");
             throw;
         }
-    }
-
-    /// <summary>
-    /// 解压插件包
-    /// </summary>
-    private string ExtractPluginPackage(string pluginPackagePath)
-    {
-        ExtractPath = Path.Combine(ExtractPath, Guid.NewGuid().ToString().Replace("-", ""));
-        string tempExtractDir = Path.Combine(ExtractPath, Path.GetFileNameWithoutExtension(pluginPackagePath));
-        
-        // 如果目录已存在，先删除
-        if (Directory.Exists(tempExtractDir))
-        {
-            Directory.Delete(tempExtractDir, true);
-        }
-        
-        Directory.CreateDirectory(tempExtractDir);
-        
-        // 解压ZIP文件
-        ZipFile.ExtractToDirectory(pluginPackagePath, tempExtractDir);
-        Console.WriteLine($@"插件包已解压到: {tempExtractDir}");
-        
-        return tempExtractDir;
     }
 
     /// <summary>
