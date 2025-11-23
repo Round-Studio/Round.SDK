@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Avalonia" Version="11.3.9" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Font\SegoeFluentIcons.ttf" />
+      <EmbeddedResource Include="Font\SegoeFluentIcons.ttf" />
+      <None Remove="Font\DinPro.ttf" />
+      <EmbeddedResource Include="Font\DinPro.ttf" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Image\Icon\Minecraft\土径.png" />
+      <AvaloniaResource Include="Image\Icon\Minecraft\土径.png" />
+      <None Remove="Image\Icon\Minecraft\工作台.png" />
+      <AvaloniaResource Include="Image\Icon\Minecraft\工作台.png" />
+      <None Remove="Image\Icon\Minecraft\末地石.png" />
+      <AvaloniaResource Include="Image\Icon\Minecraft\末地石.png" />
+      <None Remove="Image\Icon\Minecraft\草方块.png" />
+      <AvaloniaResource Include="Image\Icon\Minecraft\草方块.png" />
+    </ItemGroup>
+
+</Project>
