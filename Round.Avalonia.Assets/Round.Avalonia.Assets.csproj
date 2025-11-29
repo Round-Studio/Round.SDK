@@ -26,6 +26,8 @@
       <AvaloniaResource Include="Image\Icon\Minecraft\末地石.png" />
       <None Remove="Image\Icon\Minecraft\草方块.png" />
       <AvaloniaResource Include="Image\Icon\Minecraft\草方块.png" />
+      <None Remove="Image\Icon\mc_grassblock.png" />
+      <AvaloniaResource Include="Image\Icon\mc_grassblock.png" />
     </ItemGroup>
 
 </Project>
