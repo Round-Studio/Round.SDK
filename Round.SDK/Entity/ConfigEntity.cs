@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Round.SDK.Entity;
 
@@ -6,11 +7,14 @@ public class ConfigEntity<T> where T : new()
 {
     public T Data { get; set; }
     public string Path { get; private set; }
+    private JsonTypeInfo<T>? TypeInfo;
     
-    public ConfigEntity(string configFile)
+    public ConfigEntity(string configFile,JsonTypeInfo<T>? typeInfo = default)
     {
         Path = configFile;
-        Load();
+        TypeInfo = typeInfo;
+		Load();
+       
     }
     
     public void Load()
@@ -31,8 +35,10 @@ public class ConfigEntity<T> where T : new()
         {
             try
             {
-                Data = JsonSerializer.Deserialize<T>(json);
-            }
+				Data = TypeInfo != null
+                    ? JsonSerializer.Deserialize<T>(json, TypeInfo)
+                    : JsonSerializer.Deserialize<T>(json);
+			}
             catch
             {
                 Save();
@@ -46,8 +52,8 @@ public class ConfigEntity<T> where T : new()
         {
             Data = new T(); // 现在这里可以正常工作了
         }
-        
-        string jsresult = JsonSerializer.Serialize(Data, new JsonSerializerOptions() { WriteIndented = true });
+
+        string jsresult = TypeInfo != null ? JsonSerializer.Serialize(Data,TypeInfo) : JsonSerializer.Serialize(Data, new JsonSerializerOptions() { WriteIndented = true });
         File.WriteAllText(Path, jsresult);
     }
 }

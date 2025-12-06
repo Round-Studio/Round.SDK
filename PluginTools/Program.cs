@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Net;
 using PluginTools.Entry;
+using PluginTools.Entry.JsonContext;
 using Round.SDK.Entity;
 using Round.SDK.Helper;
 using Round.SDK.Logger;
@@ -37,7 +38,7 @@ public class Program
             Console.Write("配置文件输出地址：");
             var projectFilePath = Console.ReadLine();
 
-            var Config = new ConfigEntity<ConfigFileEntry>(Path.Combine(projectFilePath, projectName + ".json"));
+            var Config = new ConfigEntity<ConfigFileEntry>(Path.Combine(projectFilePath, projectName + ".json"),JsonContextGenerate.Default.ConfigFileEntry);
             Config.Load();
             Config.Data.PackName = projectName;
             Config.Save();
@@ -47,7 +48,7 @@ public class Program
         if (args.Contains("-b") || args.Contains("--build"))
         {
             var configFile = args[args.ToList().FindIndex(x => x.StartsWith("-config")) + 1];
-            var Config = new ConfigEntity<ConfigFileEntry>(configFile);
+            var Config = new ConfigEntity<ConfigFileEntry>(configFile,JsonContextGenerate.Default.ConfigFileEntry);
             Config.Load();
 
             if (Directory.Exists(Config.Data.BuildOutputPath)) Directory.Delete(Config.Data.BuildOutputPath, true);
@@ -95,7 +96,7 @@ public class Program
             };
 
             var packConfigBody =
-                new ConfigEntity<PackConfig>(Path.Combine(Config.Data.BuildOutputPath, "build", "pack.json"));
+                new ConfigEntity<PackConfig>(Path.Combine(Config.Data.BuildOutputPath, "build", "pack.json"),JsonContextGenerate.Default.PackConfig);
             packConfigBody.Data = packConfig;
             packConfigBody.Save();
 

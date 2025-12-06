@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json.Serialization.Metadata;
 using Round.SDK.Entity;
 using Round.SDK.Entry;
 using Round.SDK.Helper;
@@ -210,11 +211,11 @@ public class PlugLoader
     /// <summary>
     /// 加载配置文件的辅助方法
     /// </summary>
-    private T LoadConfig<T>(string configPath) where T : new()
+    private T LoadConfig<T>(string configPath,JsonTypeInfo<T>? typeInfo = default) where T : new()
     {
         try
         {
-            var configEntity = new ConfigEntity<T>(configPath);
+            var configEntity = new ConfigEntity<T>(configPath,typeInfo !=null? typeInfo : default);
             configEntity.Load();
             return configEntity.Data;
         }
