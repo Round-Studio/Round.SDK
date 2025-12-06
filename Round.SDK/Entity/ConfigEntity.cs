@@ -14,7 +14,6 @@ public class ConfigEntity<T> where T : new()
         Path = configFile;
         TypeInfo = typeInfo;
 		Load();
-       
     }
     
     public void Load()
