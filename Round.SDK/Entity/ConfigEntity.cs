@@ -47,6 +47,7 @@ public class ConfigEntity<T> where T : new()
     
     public void Save()
     {
+        Console.WriteLine($"触发保存配置项：{Path}");
         if (Data == null)
         {
             Data = new T(); // 现在这里可以正常工作了
