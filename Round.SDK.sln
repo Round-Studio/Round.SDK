@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Round.Avalonia.Assets", "Ro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Round.SDK.Hub", "Round.SDK.Hub\Round.SDK.Hub.csproj", "{FD19C75E-5FF3-4BC7-8473-AC2A5F600F4E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PluginTools", "PluginTools\PluginTools.csproj", "{416E92B7-8B2F-42CF-84AB-B007E846663A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{FD19C75E-5FF3-4BC7-8473-AC2A5F600F4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FD19C75E-5FF3-4BC7-8473-AC2A5F600F4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FD19C75E-5FF3-4BC7-8473-AC2A5F600F4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{416E92B7-8B2F-42CF-84AB-B007E846663A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{416E92B7-8B2F-42CF-84AB-B007E846663A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{416E92B7-8B2F-42CF-84AB-B007E846663A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{416E92B7-8B2F-42CF-84AB-B007E846663A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
