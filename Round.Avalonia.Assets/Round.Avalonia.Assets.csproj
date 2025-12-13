@@ -30,6 +30,8 @@
       <AvaloniaResource Include="Image\Icon\mc_grassblock.png" />
       <None Remove="Image\Icon\mc_grassblock_neo.png" />
       <AvaloniaResource Include="Image\Icon\mc_grassblock_neo.png" />
+      <None Remove="Image\Icon\mc_soilblock_neo.png" />
+      <AvaloniaResource Include="Image\Icon\mc_soilblock_neo.png" />
     </ItemGroup>
 
 </Project>
