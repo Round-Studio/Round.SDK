@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 
 namespace Round.SDK.Logger;
 
@@ -50,12 +51,18 @@ public class ConsoleRedirector : IDisposable
         _threadNames.AddOrUpdate(thread.ManagedThreadId, name, (id, oldName) => name);
     }
 
+    /// <summary>
+    /// 取消注册线程名称
+    /// </summary>
+    public static void UnregisterThread(Thread thread)
+    {
+        _threadNames.TryRemove(thread.ManagedThreadId, out _);
+    }
+
     public void Dispose()
     {
         Console.SetOut(_originalOutput);
         _writer?.Dispose();
-        // 恢复原来的控制台编码（可选）
-        // Console.OutputEncoding = Encoding.Default;
     }
 
     /// <summary>
@@ -99,8 +106,6 @@ public class ConsoleRedirector : IDisposable
                 if (!string.IsNullOrEmpty(fileName) && lineNumber > 0)
                 {
                     string shortFileName = Path.GetFileName(fileName);
-                    // return $"{className}.{methodName}({shortFileName}:{lineNumber})";
-
                     return $"{shortFileName}:{lineNumber}";
                 }
                 else
@@ -125,6 +130,7 @@ public class ConsoleRedirector : IDisposable
         private readonly TextWriter _innerWriter;
         private readonly TextWriter _orgwriter;
         private readonly string _timestampFormat;
+        private readonly object _bufferLock = new object();
         private readonly StringBuilder _lineBuffer = new StringBuilder();
 
         public ThreadAwareTextWriter(TextWriter innerWriter, TextWriter orgwriter, string timestampFormat)
@@ -144,7 +150,10 @@ public class ConsoleRedirector : IDisposable
             }
             else if (value != '\r')
             {
-                _lineBuffer.Append(value);
+                lock (_bufferLock)
+                {
+                    _lineBuffer.Append(value);
+                }
             }
         }
 
@@ -152,6 +161,7 @@ public class ConsoleRedirector : IDisposable
         {
             if (value == null) return;
             
+            // 处理可能包含换行符的字符串
             foreach (char c in value)
             {
                 Write(c);
@@ -169,33 +179,67 @@ public class ConsoleRedirector : IDisposable
         /// </summary>
         private void FlushLine()
         {
-            if (_lineBuffer.Length > 0)
+            string lineContent;
+            
+            // 安全地获取当前行的内容
+            lock (_bufferLock)
             {
-                int threadId = Thread.CurrentThread.ManagedThreadId;
-                string threadName = GetThreadName(threadId);
-                var timestamp = DateTime.Now.ToString(_timestampFormat);
-                string callerLocation = GetCallerLocation();
+                if (_lineBuffer.Length == 0)
+                {
+                    // 空行，只输出换行符
+                    _innerWriter.Write('\n');
+                    return;
+                }
                 
-                string formattedLine = $"[{timestamp}][TID {threadId}][{threadName}][{callerLocation}]: {_lineBuffer}";
-                
-                Console.SetOut(_orgwriter);
-                Console.WriteLine(formattedLine);
-                Console.SetOut(this);
-                
-                _innerWriter.Write(formattedLine);
+                lineContent = _lineBuffer.ToString();
                 _lineBuffer.Clear();
             }
             
-            _innerWriter.Write('\n');
+            // 构建格式化行
+            int threadId = Thread.CurrentThread.ManagedThreadId;
+            string threadName = GetThreadName(threadId);
+            string timestamp = DateTime.Now.ToString(_timestampFormat);
+            string callerLocation = GetCallerLocation();
+            
+            string formattedLine = $"[{timestamp}][TID {threadId}][{threadName}][{callerLocation}]: {lineContent}";
+            
+            // 输出到原始控制台
+            try
+            {
+                Console.SetOut(_orgwriter);
+                Console.WriteLine(formattedLine);
+                Console.SetOut(this);
+            }
+            catch
+            {
+                // 如果原始控制台输出失败，恢复this作为输出
+                Console.SetOut(this);
+            }
+            
+            // 输出到文件
+            _innerWriter.WriteLine(formattedLine);
         }
 
         public override void Flush()
         {
-            if (_lineBuffer.Length > 0)
+            lock (_bufferLock)
             {
-                FlushLine();
+                if (_lineBuffer.Length > 0)
+                {
+                    FlushLine();
+                }
             }
             _innerWriter.Flush();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                Flush();
+                _innerWriter?.Dispose();
+            }
+            base.Dispose(disposing);
         }
 
         private string GetThreadName(int threadId)
