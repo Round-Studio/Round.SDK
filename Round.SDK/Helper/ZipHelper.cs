@@ -28,6 +28,6 @@ public class ZipHelper
 
         // 解压ZIP文件
         ZipFile.ExtractToDirectory(file, extractDir);
-        Console.WriteLine($@"插件包已解压到: {extractDir}");
+        Console.WriteLine($@"包已解压到: {extractDir}");
     }
 }
