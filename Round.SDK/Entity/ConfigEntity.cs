@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using Round.SDK.Global;
 
 namespace Round.SDK.Entity;
 
@@ -8,14 +9,14 @@ public class ConfigEntity<T> where T : new()
     public T Data { get; set; }
     public string Path { get; private set; }
     private JsonTypeInfo<T>? TypeInfo;
-    
-    public ConfigEntity(string configFile,JsonTypeInfo<T>? typeInfo = default)
+
+    public ConfigEntity(string configFile, JsonTypeInfo<T>? typeInfo = default)
     {
         Path = configFile;
         TypeInfo = typeInfo;
-		Load();
+        Load();
     }
-    
+
     public void Load()
     {
         if (!File.Exists(Path))
@@ -24,7 +25,7 @@ public class ConfigEntity<T> where T : new()
             Save();
             return;
         }
-        
+
         var json = File.ReadAllText(Path);
         if (string.IsNullOrEmpty(json))
         {
@@ -34,17 +35,17 @@ public class ConfigEntity<T> where T : new()
         {
             try
             {
-				Data = TypeInfo != null
+                Data = TypeInfo != null
                     ? JsonSerializer.Deserialize<T>(json, TypeInfo)
-                    : JsonSerializer.Deserialize<T>(json);
-			}
+                    : JsonSerializer.Deserialize<T>(json, JsonSerializerOption.Options);
+            }
             catch
             {
                 Save();
             }
         }
     }
-    
+
     public void Save()
     {
         Console.WriteLine($"触发保存配置项：{Path}");
@@ -53,7 +54,9 @@ public class ConfigEntity<T> where T : new()
             Data = new T(); // 现在这里可以正常工作了
         }
 
-        string jsresult = TypeInfo != null ? JsonSerializer.Serialize(Data,TypeInfo) : JsonSerializer.Serialize(Data, new JsonSerializerOptions() { WriteIndented = true });
+        string jsresult = TypeInfo != null
+            ? JsonSerializer.Serialize(Data, TypeInfo)
+            : JsonSerializer.Serialize(Data, JsonSerializerOption.Options);
         File.WriteAllText(Path, jsresult);
     }
 }
