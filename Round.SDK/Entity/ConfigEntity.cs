@@ -9,11 +9,13 @@ public class ConfigEntity<T> where T : new()
     public T Data { get; set; }
     public string Path { get; private set; }
     private JsonTypeInfo<T>? TypeInfo;
+    public bool IsSave { get; set; } = true;
 
-    public ConfigEntity(string configFile, JsonTypeInfo<T>? typeInfo = default)
+    public ConfigEntity(string configFile, bool isSave = true, JsonTypeInfo<T>? typeInfo = default)
     {
         Path = configFile;
         TypeInfo = typeInfo;
+        IsSave = isSave;
         Load();
     }
 
@@ -48,6 +50,9 @@ public class ConfigEntity<T> where T : new()
 
     public void Save()
     {
+        if (!IsSave)
+            return;
+
         Console.WriteLine($"触发保存配置项：{Path}");
         if (Data == null)
         {

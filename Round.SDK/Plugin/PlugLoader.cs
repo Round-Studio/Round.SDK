@@ -215,7 +215,7 @@ public class PlugLoader
     {
         try
         {
-            var configEntity = new ConfigEntity<T>(configPath,typeInfo !=null? typeInfo : default);
+            var configEntity = new ConfigEntity<T>(configPath, false, typeInfo != null ? typeInfo : default);
             configEntity.Load();
             return configEntity.Data;
         }
