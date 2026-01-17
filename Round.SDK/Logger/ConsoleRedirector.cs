@@ -106,7 +106,8 @@ public class ConsoleRedirector : IDisposable
                 if (!string.IsNullOrEmpty(fileName) && lineNumber > 0)
                 {
                     string shortFileName = Path.GetFileName(fileName);
-                    return $"{shortFileName}:{lineNumber}";
+                    // return $"{shortFileName}:{lineNumber}";
+                    return $"{className}.{methodName}";
                 }
                 else
                 {
