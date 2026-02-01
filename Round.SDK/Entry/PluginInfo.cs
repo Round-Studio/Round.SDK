@@ -1,7 +1,7 @@
 ﻿namespace Round.SDK.Entry;
 
 /// <summary>
-/// 插件信息类
+///     插件信息类
 /// </summary>
 public class PluginInfo
 {

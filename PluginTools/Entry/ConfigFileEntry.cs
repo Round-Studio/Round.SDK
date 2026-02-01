@@ -11,12 +11,16 @@ public class ConfigFileEntry
     [JsonPropertyName("packDescription")] public string PackDescription { get; set; } = "Plugin Description";
     [JsonPropertyName("packLicense")] public string PackLicense { get; set; } = "";
     [JsonPropertyName("packLicenseUrl")] public string PackLicenseUrl { get; set; } = "";
-    [JsonPropertyName("packScreenshots")] public List<string> PackScreenshots { get; set; } = new ()
+
+    [JsonPropertyName("packScreenshots")]
+    public List<string> PackScreenshots { get; set; } = new()
     {
         "每张图片的路径"
     };
 
-    [JsonPropertyName("buildProjectFilePath")] public string BuildProjectFilePath { get; set; } = "./Project.csproj";
+    [JsonPropertyName("buildProjectFilePath")]
+    public string BuildProjectFilePath { get; set; } = "./Project.csproj";
+
     [JsonPropertyName("buildOutputPath")] public string BuildOutputPath { get; set; } = "./publish";
     [JsonPropertyName("bodyFile")] public string BodyFile { get; set; } = "Project.dll";
 }

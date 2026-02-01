@@ -6,9 +6,10 @@ namespace Round.SDK.Helper;
 
 public class PluginFileInfoHelper
 {
-    private static string TempPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+    private static readonly string TempPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "RoundStudio", "SDK", "SDK.Plugin.Temp");
-    
+
     public static PackConfig? GetFileInfo(string filePath)
     {
         var ext = Path.Combine(TempPath, FileHashCalculator.CalculateHash(filePath, FileHashCalculator.HashType.MD5));
@@ -18,10 +19,8 @@ public class PluginFileInfoHelper
         var result = JsonSerializer.Deserialize<PackConfig>(File.ReadAllText(jsonFile));
 
         if (!string.IsNullOrEmpty(result.PackIconPath))
-        {
             result.PackIconPath = Path.Combine(ext, "assets", "icon", result.PackIconPath);
-        }
-        
+
         return result;
     }
 }

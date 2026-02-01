@@ -2,9 +2,8 @@ using System.Text.Json.Serialization;
 
 namespace Round.SDK.Entry;
 
-
 /// <summary>
-/// 插件包配置类（需要与你的 pack.json 结构匹配）
+///     插件包配置类（需要与你的 pack.json 结构匹配）
 /// </summary>
 public class PackConfig
 {

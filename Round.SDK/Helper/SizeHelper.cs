@@ -5,8 +5,8 @@ public class SizeHelper
     public static string FormatBytes(double bytes)
     {
         string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
-        int counter = 0;
-        double number = bytes;
+        var counter = 0;
+        var number = bytes;
 
         while (number >= 1024 && counter < suffixes.Length - 1)
         {

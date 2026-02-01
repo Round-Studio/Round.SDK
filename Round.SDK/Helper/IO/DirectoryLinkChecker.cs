@@ -20,25 +20,23 @@ public static class DirectoryLinkChecker
         if (di.LinkTarget != null)
         {
             // 检查链接目标是否存在
-            string target = di.LinkTarget;
+            var target = di.LinkTarget;
 
             // 判断是符号链接还是连接点
             if (Path.IsPathRooted(target))
-            {
                 // 如果是完整路径，可能是符号链接
                 try
                 {
                     // 检查目标是否是文件或文件夹
                     if (File.Exists(target))
                         return DirectoryType.SymbolicLink; // 文件符号链接
-                    else if (Directory.Exists(target))
+                    if (Directory.Exists(target))
                         return DirectoryType.SymbolicLink; // 文件夹符号链接
                 }
                 catch
                 {
                     return DirectoryType.JunctionLink; // 可能是连接点
                 }
-            }
 
             return DirectoryType.JunctionLink; // 连接点
         }

@@ -28,7 +28,7 @@ public static class FileHashCalculator
 
             using (hashAlgorithm)
             {
-                byte[] hashBytes = hashAlgorithm.ComputeHash(stream);
+                var hashBytes = hashAlgorithm.ComputeHash(stream);
                 return ByteArrayToHexString(hashBytes);
             }
         }
@@ -36,11 +36,8 @@ public static class FileHashCalculator
 
     private static string ByteArrayToHexString(byte[] bytes)
     {
-        StringBuilder sb = new StringBuilder();
-        foreach (byte b in bytes)
-        {
-            sb.Append(b.ToString("x2"));
-        }
+        var sb = new StringBuilder();
+        foreach (var b in bytes) sb.Append(b.ToString("x2"));
         return sb.ToString();
     }
 

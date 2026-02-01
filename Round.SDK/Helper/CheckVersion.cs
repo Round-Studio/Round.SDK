@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 
 namespace Round.SDK.Helper;
@@ -9,16 +6,17 @@ public static class CheckVersion
 {
     public static bool CheckTimeAndExecute24Hour(DateTime targetTime)
     {
-        DateTime currentTime = DateTime.Now;
-    
+        var currentTime = DateTime.Now;
+
         // 计算时间差
-        TimeSpan timeDifference = currentTime - targetTime;
-    
+        var timeDifference = currentTime - targetTime;
+
         // 检查是否在24小时内
         return timeDifference.TotalHours <= 24 && timeDifference.TotalHours >= 0;
     }
+
     /// <summary>
-    /// 获取程序集的构建时间戳（从 AssemblyMetadata）
+    ///     获取程序集的构建时间戳（从 AssemblyMetadata）
     /// </summary>
     public static DateTime? GetBuildTimestamp(Assembly assembly)
     {
@@ -32,7 +30,7 @@ public static class CheckVersion
     }
 
     /// <summary>
-    /// 获取程序集文件的最后写入时间
+    ///     获取程序集文件的最后写入时间
     /// </summary>
     public static DateTime? GetLastWriteTime(Assembly assembly)
     {
@@ -50,7 +48,7 @@ public static class CheckVersion
     }
 
     /// <summary>
-    /// 从文件路径加载程序集并获取构建时间戳
+    ///     从文件路径加载程序集并获取构建时间戳
     /// </summary>
     public static DateTime? GetBuildTimestampFromPath(string assemblyPath)
     {
@@ -68,10 +66,10 @@ public static class CheckVersion
     }
 
     /// <summary>
-    /// 从文件路径获取程序集的最后写入时间
+    ///     从文件路径获取程序集的最后写入时间
     /// </summary>
     public static DateTime? GetLastWriteTimeFromPath(string assemblyPath)
     {
-        return File.Exists(assemblyPath) ? (DateTime?)File.GetLastWriteTime(assemblyPath) : null;
+        return File.Exists(assemblyPath) ? File.GetLastWriteTime(assemblyPath) : null;
     }
 }

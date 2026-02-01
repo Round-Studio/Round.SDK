@@ -1,6 +1,5 @@
 namespace Round.SDK.Entry.Helper;
 
-
 public class MonitorEntry
 {
     public string Path { get; set; }

@@ -6,14 +6,14 @@ namespace Round.SDK.Entry;
 // 保存事件参数
 public class ConfigSaveEventArgs<T> : EventArgs where T : new()
 {
-    public ConfigEntity<T> Config { get; }
-    public SavePhase Phase { get; }
-    public DateTime Timestamp { get; }
-    
     public ConfigSaveEventArgs(ConfigEntity<T> config, SavePhase phase)
     {
         Config = config;
         Phase = phase;
         Timestamp = DateTime.Now;
     }
+
+    public ConfigEntity<T> Config { get; }
+    public SavePhase Phase { get; }
+    public DateTime Timestamp { get; }
 }

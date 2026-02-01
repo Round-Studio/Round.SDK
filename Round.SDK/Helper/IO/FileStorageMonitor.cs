@@ -1,21 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Round.SDK.Entry.Helper;
 
 namespace Round.SDK.Helper.IO;
 
 public class FileStorageMonitor : IDisposable
 {
-    private List<MonitorEntry> _monitorEntries = new List<MonitorEntry>();
-    private Action<long> _totalChangeCallback;
-    private long _lastTotalSize = 0;
-    private Timer _debounceTimer;
-    private readonly object _lockObject = new object();
-    private bool _isProcessing = false;
+    private readonly Timer _debounceTimer;
+    private readonly object _lockObject = new();
+    private readonly List<MonitorEntry> _monitorEntries = new();
+    private readonly Action<long> _totalChangeCallback;
+    private bool _isProcessing;
+    private long _lastTotalSize;
 
     public FileStorageMonitor(Action<long> totalChangeCallback)
     {
@@ -24,18 +18,23 @@ public class FileStorageMonitor : IDisposable
         _debounceTimer = new Timer(DebounceTimerCallback, null, Timeout.Infinite, Timeout.Infinite);
     }
 
+    public void Dispose()
+    {
+        _debounceTimer?.Dispose();
+        foreach (var entry in _monitorEntries) entry.Watcher?.Dispose();
+        _monitorEntries.Clear();
+    }
+
     public void Add(MonitorEntry entry)
     {
-        if (!Directory.Exists(entry.Path))
-        {
-            throw new DirectoryNotFoundException($"目录不存在: {entry.Path}");
-        }
+        if (!Directory.Exists(entry.Path)) throw new DirectoryNotFoundException($"目录不存在: {entry.Path}");
 
         // 创建文件系统监视器
         var watcher = new FileSystemWatcher
         {
             Path = entry.Path,
-            NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size | NotifyFilters.LastWrite,
+            NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size |
+                           NotifyFilters.LastWrite,
             IncludeSubdirectories = true,
             EnableRaisingEvents = true,
             InternalBufferSize = 65536 // 增加缓冲区大小
@@ -95,18 +94,18 @@ public class FileStorageMonitor : IDisposable
     {
         try
         {
-            long totalSize = GetTotalSize();
-            
+            var totalSize = GetTotalSize();
+
             if (totalSize != _lastTotalSize)
             {
                 _lastTotalSize = totalSize;
-                
+
                 // 在主线程或线程池中调用回调
                 Task.Run(() =>
                 {
                     // 调用总变化回调
                     _totalChangeCallback?.Invoke(totalSize);
-                    
+
                     // 调用所有注册的文件夹回调
                     NotifyAllCallbacks(totalSize);
                 });
@@ -121,7 +120,6 @@ public class FileStorageMonitor : IDisposable
     private void NotifyAllCallbacks(long totalSize)
     {
         foreach (var entry in _monitorEntries)
-        {
             try
             {
                 var currentSize = CalculateDirectorySize(entry.Path);
@@ -131,16 +129,12 @@ public class FileStorageMonitor : IDisposable
             {
                 Console.WriteLine($"调用回调时出错 (路径: {entry.Path}): {ex.Message}");
             }
-        }
     }
 
     public long GetTotalSize()
     {
         long totalSize = 0;
-        foreach (var entry in _monitorEntries)
-        {
-            totalSize += CalculateDirectorySize(entry.Path);
-        }
+        foreach (var entry in _monitorEntries) totalSize += CalculateDirectorySize(entry.Path);
         return totalSize;
     }
 
@@ -154,28 +148,28 @@ public class FileStorageMonitor : IDisposable
 
             // 使用并行处理提高性能
             var files = directory.GetFiles("*.*", SearchOption.AllDirectories)
-                                .AsParallel()
-                                .Where(f => 
-                                {
-                                    try 
-                                    { 
-                                        return f.Exists; 
-                                    }
-                                    catch 
-                                    { 
-                                        return false; 
-                                    }
-                                });
+                .AsParallel()
+                .Where(f =>
+                {
+                    try
+                    {
+                        return f.Exists;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                });
 
-            size = files.Sum(f => 
+            size = files.Sum(f =>
             {
-                try 
-                { 
-                    return f.Length; 
+                try
+                {
+                    return f.Length;
                 }
-                catch 
-                { 
-                    return 0; 
+                catch
+                {
+                    return 0;
                 }
             });
         }
@@ -183,6 +177,7 @@ public class FileStorageMonitor : IDisposable
         {
             Console.WriteLine($"计算目录大小时出错: {path}, 错误: {ex.Message}");
         }
+
         return size;
     }
 
@@ -199,22 +194,9 @@ public class FileStorageMonitor : IDisposable
 
     public void Clear()
     {
-        foreach (var entry in _monitorEntries)
-        {
-            entry.Watcher?.Dispose();
-        }
+        foreach (var entry in _monitorEntries) entry.Watcher?.Dispose();
         _monitorEntries.Clear();
         _lastTotalSize = 0;
         _totalChangeCallback?.Invoke(0);
-    }
-
-    public void Dispose()
-    {
-        _debounceTimer?.Dispose();
-        foreach (var entry in _monitorEntries)
-        {
-            entry.Watcher?.Dispose();
-        }
-        _monitorEntries.Clear();
     }
 }

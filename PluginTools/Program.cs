@@ -1,10 +1,8 @@
 ﻿using System.Diagnostics;
-using System.Net;
 using PluginTools.Entry;
 using PluginTools.Entry.JsonContext;
 using Round.SDK.Entity;
 using Round.SDK.Helper;
-using Round.SDK.Logger;
 
 namespace PluginTools;
 
@@ -21,12 +19,10 @@ public class Program
         }
 
         if (args.Contains("-h") || args.Contains("--help"))
-        {
             Console.WriteLine("PluginTools 帮助列表\n\n" +
                               "-h / -help => PluginTools 帮助列表\n" +
                               "-c / -creat => 创建一个插件包配置文件模版\n" +
                               "-b / -build -config <配置文件> => 根据配置文件生成插件包");
-        }
 
         if (args.Contains("-c") || args.Contains("--creat"))
         {
@@ -58,9 +54,9 @@ public class Program
             var buildCommand =
                 $"publish \"{Config.Data.BuildProjectFilePath}\" -c Release -o \"{Path.Combine(Config.Data.BuildOutputPath, "build", "files")}\"";
 
-            var process = new Process()
+            var process = new Process
             {
-                StartInfo = new ProcessStartInfo()
+                StartInfo = new ProcessStartInfo
                 {
                     FileName = "dotnet",
                     Arguments = buildCommand
@@ -85,7 +81,7 @@ public class Program
                     Path.Combine(Config.Data.BuildOutputPath, "build", "assets", "icon",
                         Path.GetFileName(Config.Data.PackIconPath)));
 
-            var packConfig = new PackConfig()
+            var packConfig = new PackConfig
             {
                 PackName = Config.Data.PackName,
                 PackDescription = Config.Data.PackDescription,
