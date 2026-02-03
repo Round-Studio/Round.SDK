@@ -24,4 +24,21 @@ public class ZipHelper
         ZipFile.ExtractToDirectory(file, extractDir);
         Console.WriteLine($@"包已解压到: {extractDir}");
     }
+    
+    public static string GetTextFileContent(string zipPath, string targetFileName)
+    {
+        using (ZipArchive archive = ZipFile.OpenRead(zipPath))
+        {
+            ZipArchiveEntry entry = archive.GetEntry(targetFileName);
+            
+            if (entry != null)
+            {
+                using (StreamReader reader = new StreamReader(entry.Open()))
+                {
+                    return reader.ReadToEnd();
+                }
+            }
+        }
+        return null;
+    }
 }
