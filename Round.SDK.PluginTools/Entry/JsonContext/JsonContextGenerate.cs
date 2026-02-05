@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace PluginTools.Entry.JsonContext;
+namespace Round.SDK.PluginTools.Entry.JsonContext;
 
 [JsonSourceGenerationOptions(
     WriteIndented = true,
