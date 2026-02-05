@@ -2,11 +2,11 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Round.SDK", "Round.SDK\Round.SDK.csproj", "{7841923A-EF8C-4F08-ACFB-8F7A4CBCBC1C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Round.Avalonia.Assets", "Round.Avalonia.Assets\Round.Avalonia.Assets.csproj", "{4B84FBEF-7620-418B-B31C-52568C595FCA}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Round.SDK.Hub", "Round.SDK.Hub\Round.SDK.Hub.csproj", "{FD19C75E-5FF3-4BC7-8473-AC2A5F600F4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PluginTools", "PluginTools\PluginTools.csproj", "{416E92B7-8B2F-42CF-84AB-B007E846663A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Round.SDK.Avalonia", "Round.SDK.Avalonia\Round.SDK.Avalonia.csproj", "{E572F0F2-B0F8-40EA-8DB8-271C683A5C5E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Round.SDK.PluginTools", "Round.SDK.PluginTools\Round.SDK.PluginTools.csproj", "{5018C5F7-8D13-4093-907B-4A8A4EA721DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,17 +18,17 @@ Global
 		{7841923A-EF8C-4F08-ACFB-8F7A4CBCBC1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7841923A-EF8C-4F08-ACFB-8F7A4CBCBC1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7841923A-EF8C-4F08-ACFB-8F7A4CBCBC1C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4B84FBEF-7620-418B-B31C-52568C595FCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4B84FBEF-7620-418B-B31C-52568C595FCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4B84FBEF-7620-418B-B31C-52568C595FCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4B84FBEF-7620-418B-B31C-52568C595FCA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FD19C75E-5FF3-4BC7-8473-AC2A5F600F4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FD19C75E-5FF3-4BC7-8473-AC2A5F600F4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FD19C75E-5FF3-4BC7-8473-AC2A5F600F4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FD19C75E-5FF3-4BC7-8473-AC2A5F600F4E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{416E92B7-8B2F-42CF-84AB-B007E846663A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{416E92B7-8B2F-42CF-84AB-B007E846663A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{416E92B7-8B2F-42CF-84AB-B007E846663A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{416E92B7-8B2F-42CF-84AB-B007E846663A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E572F0F2-B0F8-40EA-8DB8-271C683A5C5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E572F0F2-B0F8-40EA-8DB8-271C683A5C5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E572F0F2-B0F8-40EA-8DB8-271C683A5C5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E572F0F2-B0F8-40EA-8DB8-271C683A5C5E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5018C5F7-8D13-4093-907B-4A8A4EA721DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5018C5F7-8D13-4093-907B-4A8A4EA721DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5018C5F7-8D13-4093-907B-4A8A4EA721DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5018C5F7-8D13-4093-907B-4A8A4EA721DA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
