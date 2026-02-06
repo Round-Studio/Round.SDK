@@ -13,10 +13,11 @@ public class ZipHelper
         ZipFile.CreateFromDirectory(sourceFolder, zipPath);
     }
 
-    public static void ExtractZipFile(string file, string extractDir)
+    public static void ExtractZipFile(string file, string extractDir, bool isExists = false)
     {
         // 如果目录已存在，退出
-        if (Directory.Exists(extractDir)) return;
+        if (Directory.Exists(extractDir) &&
+            !isExists) return;
 
         Directory.CreateDirectory(extractDir);
 
