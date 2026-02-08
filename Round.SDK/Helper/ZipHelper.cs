@@ -22,7 +22,7 @@ public class ZipHelper
         Directory.CreateDirectory(extractDir);
 
         // 解压ZIP文件
-        ZipFile.ExtractToDirectory(file, extractDir);
+        ZipFile.ExtractToDirectory(file, extractDir, true);
         Console.WriteLine($@"包已解压到: {extractDir}");
     }
     
