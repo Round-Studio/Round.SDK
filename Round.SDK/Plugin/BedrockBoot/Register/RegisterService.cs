@@ -7,11 +7,11 @@ public class RegisterService
     public static void RegisterTopBarItem(TopBarItemInfo info)
     {
         Console.WriteLine($@"注册导航项 {info.Tag}");
-        API.RegisterTopBarItem.Invoke(info);
+        API.RegisterNavigationBarItem?.Invoke(info);
     }
 
     public class API
     {
-        public static Action<TopBarItemInfo>? RegisterTopBarItem { get; set; }
+        public static Action<TopBarItemInfo>? RegisterNavigationBarItem { get; set; }
     }
 }
