@@ -27,6 +27,11 @@ public class ConfigEntity<T> where T : new()
     public string Path { get; }
     public bool IsSave { get; set; } = true;
 
+    public static T JsonDeserialize(string json)
+    {
+        return JsonSerializer.Deserialize<T>(json, JsonSerializerOption.Options);
+    }
+
     // 保存事件
     public event EventHandler<ConfigSaveEventArgs<T>>? BeforeSave;
     public event EventHandler<ConfigSaveEventArgs<T>>? AfterSave;
