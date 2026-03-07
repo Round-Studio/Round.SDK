@@ -190,7 +190,8 @@ public class ConsoleRedirector : IDisposable
             var timestamp = DateTime.Now.ToString(_timestampFormat);
             var callerLocation = GetCallerLocation();
 
-            var formattedLine = $"[{timestamp}][TID {threadId}][{threadName}][{callerLocation}]: {lineContent}";
+            // var formattedLine = $"[{timestamp}][TID {threadId}][{threadName}][{callerLocation}]: {lineContent}";
+            var formattedLine = $"[{timestamp}] [{callerLocation}]: {lineContent}";
 
             // 输出到原始控制台
             try
@@ -235,7 +236,7 @@ public class ConsoleRedirector : IDisposable
             if (_threadNames.TryGetValue(threadId, out var name)) return name;
 
             // 自动为未命名的线程生成名称
-            var newName = $"Thread-{threadId}";
+            var newName = $"T-{threadId}";
             _threadNames.TryAdd(threadId, newName);
             return newName;
         }
