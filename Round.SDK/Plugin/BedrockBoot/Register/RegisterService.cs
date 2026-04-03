@@ -9,9 +9,15 @@ public class RegisterService
         Console.WriteLine($@"注册导航项 {info.Tag}");
         API.RegisterNavigationBarItem?.Invoke(info);
     }
+    public static void RegisterInstanceControlItem(InstanceControlItemInfo info)
+    {
+        Console.WriteLine($@"注册实例操作项 {info.Header}");
+        API.InstanceControlItems.Add(info);
+    }
 
     public class API
     {
         public static Action<TopBarItemInfo>? RegisterNavigationBarItem { get; set; }
+        public static List<InstanceControlItemInfo> InstanceControlItems { get; set; } = new();
     }
 }
