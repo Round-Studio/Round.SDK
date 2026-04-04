@@ -65,7 +65,7 @@ public class FileStorageMonitor : IDisposable
 
     private void OnWatcherError(MonitorEntry entry, ErrorEventArgs e)
     {
-        Console.WriteLine($"文件监视器错误 (路径: {entry.Path}): {e.GetException().Message}");
+        Console.WriteLine($@"文件监视器错误 (路径: {entry.Path}): {e.GetException().Message}");
         // 可以考虑重新启动监视器
     }
 
@@ -113,7 +113,7 @@ public class FileStorageMonitor : IDisposable
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"计算和通知时出错: {ex.Message}");
+            Console.WriteLine($@"计算和通知时出错: {ex.Message}");
         }
     }
 
@@ -127,7 +127,7 @@ public class FileStorageMonitor : IDisposable
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"调用回调时出错 (路径: {entry.Path}): {ex.Message}");
+                Console.WriteLine($@"调用回调时出错 (路径: {entry.Path}): {ex.Message}");
             }
     }
 
@@ -175,7 +175,7 @@ public class FileStorageMonitor : IDisposable
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"计算目录大小时出错: {path}, 错误: {ex.Message}");
+            Console.WriteLine($@"计算目录大小时出错: {path}, 错误: {ex.Message}");
         }
 
         return size;

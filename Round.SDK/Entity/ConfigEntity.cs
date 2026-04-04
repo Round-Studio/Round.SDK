@@ -99,7 +99,7 @@ public class ConfigEntity<T> where T : new()
         // 触发保存前回调
         TriggerBeforeSave();
 
-        Console.WriteLine($"触发保存配置项：{Path}");
+        Console.WriteLine($@"触发保存配置项：{Path}");
         if (Data == null) Data = new T();
 
         var jsresult = TypeInfo != null
@@ -123,7 +123,7 @@ public class ConfigEntity<T> where T : new()
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"保存前回调执行失败: {ex.Message}");
+            Console.WriteLine($@"保存前回调执行失败: {ex.Message}");
         }
     }
 
@@ -139,7 +139,7 @@ public class ConfigEntity<T> where T : new()
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"保存后回调执行失败: {ex.Message}");
+            Console.WriteLine($@"保存后回调执行失败: {ex.Message}");
         }
     }
 }

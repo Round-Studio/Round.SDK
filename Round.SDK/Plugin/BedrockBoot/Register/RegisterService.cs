@@ -14,10 +14,16 @@ public class RegisterService
         Console.WriteLine($@"注册实例操作项 {info.Header}");
         API.InstanceControlItems.Add(info);
     }
+    public static void RegisterLaunchingEvent(Action<string> action)
+    {
+        Console.WriteLine($@"注册启动操作 {action.Method.Name}");
+        API.LaunchingEvent.Add(action);
+    }
 
     public class API
     {
         public static Action<TopBarItemInfo>? RegisterNavigationBarItem { get; set; }
         public static List<InstanceControlItemInfo> InstanceControlItems { get; set; } = new();
+        public static List<Action<string>> LaunchingEvent { get; set; } = new();
     }
 }

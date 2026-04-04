@@ -36,11 +36,11 @@ public class ProtocolRegister
             // 对于 Windows 11/10 需要额外的注册
             RegisterForWindows10(applicationPath);
 
-            Console.WriteLine($"协议 {ProtocolName}:// 注册成功！");
+            Console.WriteLine($@"协议 {ProtocolName}:// 注册成功！");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"注册失败: {ex.Message}");
+            Console.WriteLine($@"注册失败: {ex.Message}");
         }
     }
 
@@ -90,11 +90,11 @@ public class ProtocolRegister
             Registry.CurrentUser.DeleteSubKeyTree(
                 $@"Software\{ProtocolName}Capabilities", false);
 
-            Console.WriteLine($"协议 {ProtocolName}:// 已卸载！");
+            Console.WriteLine($@"协议 {ProtocolName}:// 已卸载！");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"卸载失败: {ex.Message}");
+            Console.WriteLine($@"卸载失败: {ex.Message}");
         }
     }
 }
