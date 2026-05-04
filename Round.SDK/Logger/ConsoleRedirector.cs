@@ -1,5 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.CompilerServices; // 必须引用，用于识别异步状态机
 using System.Text;
 
 namespace Round.SDK.Logger;
@@ -8,36 +10,21 @@ public class ConsoleRedirector : IDisposable
 {
     private static readonly ConcurrentDictionary<int, string> _threadNames = new();
     private readonly TextWriter _originalOutput;
-
     private readonly StreamWriter _writer;
 
-    /// <summary>
-    ///     初始化控制台重定向器
-    /// </summary>
-    /// <param name="filePath">日志文件路径</param>
-    /// <param name="timestampFormat">时间戳格式(默认: HH:mm:ss.fff)</param>
     public ConsoleRedirector(string filePath, string timestampFormat = "HH:mm:ss.fff")
     {
         FileName = filePath;
-        if (!Directory.Exists(Path.GetDirectoryName(filePath)))
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+        var directory = Path.GetDirectoryName(filePath);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            Directory.CreateDirectory(directory);
 
         _originalOutput = Console.Out;
-        var timestampFormat1 = timestampFormat;
-
-        // 注册主线程名称
         RegisterThread(Thread.CurrentThread, "Main");
 
-        // 创建 UTF-8 编码的 StreamWriter（不带 BOM）
-        _writer = new StreamWriter(filePath, false, new UTF8Encoding(false))
-        {
-            AutoFlush = true
-        };
-
-        // 设置控制台输出编码为 UTF-8
+        _writer = new StreamWriter(filePath, false, new UTF8Encoding(false)) { AutoFlush = true };
         Console.OutputEncoding = Encoding.UTF8;
-
-        Console.SetOut(new ThreadAwareTextWriter(_writer, _originalOutput, timestampFormat1));
+        Console.SetOut(new ThreadAwareTextWriter(_writer, _originalOutput, timestampFormat));
     }
 
     public static string? FileName { get; private set; } = string.Empty;
@@ -48,197 +35,148 @@ public class ConsoleRedirector : IDisposable
         _writer?.Dispose();
     }
 
-    /// <summary>
-    ///     注册线程名称
-    /// </summary>
-    public static void RegisterThread(Thread thread, string name)
-    {
-        _threadNames.AddOrUpdate(thread.ManagedThreadId, name, (id, oldName) => name);
-    }
+    public static void RegisterThread(Thread thread, string name) => _threadNames.AddOrUpdate(thread.ManagedThreadId, name, (_, _) => name);
+    public static void UnregisterThread(Thread thread) => _threadNames.TryRemove(thread.ManagedThreadId, out _);
 
     /// <summary>
-    ///     取消注册线程名称
-    /// </summary>
-    public static void UnregisterThread(Thread thread)
-    {
-        _threadNames.TryRemove(thread.ManagedThreadId, out _);
-    }
-
-    /// <summary>
-    ///     获取调用位置信息
+    /// 获取精简且友好的调用位置信息
     /// </summary>
     private static string GetCallerLocation()
     {
         try
         {
-            // 创建堆栈跟踪，跳过足够的帧数来找到真正的调用者
-            var stackTrace = new StackTrace(true);
-
-            // 遍历堆栈帧，找到第一个不在 ThreadAwareTextWriter 中的调用者
+            var stackTrace = new StackTrace(false);
             for (var i = 0; i < stackTrace.FrameCount; i++)
             {
-                var frame = stackTrace.GetFrame(i);
-                var method = frame?.GetMethod();
-
+                var method = stackTrace.GetFrame(i)?.GetMethod();
                 if (method == null) continue;
 
-                // 跳过 ThreadAwareTextWriter 和 System.IO 相关的内部方法
                 var declaringType = method.DeclaringType;
                 if (declaringType == null) continue;
 
-                var typeName = declaringType.FullName;
-                if (typeName != null &&
-                    (typeName.Contains(nameof(ThreadAwareTextWriter)) ||
-                     typeName.Contains(nameof(ConsoleRedirector)) ||
-                     typeName.StartsWith("System.IO") ||
-                     typeName.StartsWith("System.Console")))
+                var typeName = declaringType.FullName ?? "";
+                if (typeName.Contains(nameof(ConsoleRedirector)) || typeName.StartsWith("System.") || typeName.StartsWith("Microsoft."))
                     continue;
 
-                // 找到真正的调用者
-                var className = declaringType.Name;
-                var methodName = method.Name;
-                var fileName = frame.GetFileName();
-                var lineNumber = frame.GetFileLineNumber();
-
-                if (!string.IsNullOrEmpty(fileName) && lineNumber > 0)
+                // --- 处理异步状态机 (Async/Await) ---
+                if (method.Name == "MoveNext" && typeof(IAsyncStateMachine).IsAssignableFrom(declaringType))
                 {
-                    var shortFileName = Path.GetFileName(fileName);
-                    // return $"{shortFileName}:{lineNumber}";
-                    return $"{className}.{methodName}";
+                    // 尝试从状态机类型中找回原始方法
+                    var realMethod = declaringType.DeclaringType?.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+                        .FirstOrDefault(m => m.GetCustomAttribute<AsyncStateMachineAttribute>()?.StateMachineType == declaringType);
+
+                    if (realMethod != null)
+                    {
+                        return FormatName(realMethod.DeclaringType?.Name, realMethod.Name);
+                    }
+
+                    // 如果没找到 Attribute，则从类名提取 (例如 <TestSingleIpAsync>d__9)
+                    var rawName = declaringType.Name;
+                    if (rawName.StartsWith("<") && rawName.Contains(">"))
+                    {
+                        var cleanName = rawName.Substring(1, rawName.IndexOf('>') - 1);
+                        return FormatName(declaringType.DeclaringType?.Name, cleanName);
+                    }
                 }
 
-                return $"{className}.{methodName}";
+                // --- 处理普通方法 ---
+                return FormatName(declaringType.Name, method.Name);
             }
         }
-        catch
-        {
-            // 忽略异常，返回默认值
-        }
-
+        catch { /* ignored */ }
         return "Unknown";
     }
 
     /// <summary>
-    ///     自定义TextWriter，为每行添加线程名、时间戳和调用位置
+    /// 格式化名称：去除泛型后缀、清理乱码
     /// </summary>
+    private static string FormatName(string? className, string methodName)
+    {
+        if (string.IsNullOrEmpty(className)) className = "Global";
+
+        // 清理泛型反引号 (ConfigEntity`1 -> ConfigEntity)
+        var backtickIndex = className.IndexOf('`');
+        if (backtickIndex > 0) className = className.Substring(0, backtickIndex);
+
+        // 清理匿名方法的名称 (例如 <Main>b__0 -> Main)
+        if (methodName.StartsWith("<") && methodName.Contains(">"))
+        {
+            methodName = methodName.Substring(1, methodName.IndexOf('>') - 1);
+        }
+
+        return $"{className}.{methodName}";
+    }
+
     private class ThreadAwareTextWriter : TextWriter
     {
-        private readonly object _bufferLock = new();
-        private readonly TextWriter _innerWriter;
+        private readonly object _lock = new();
+        private readonly TextWriter _fileWriter;
+        private readonly TextWriter _consoleOutput;
+        private readonly string _tsFormat;
         private readonly StringBuilder _lineBuffer = new();
-        private readonly TextWriter _orgwriter;
-        private readonly string _timestampFormat;
 
-        public ThreadAwareTextWriter(TextWriter innerWriter, TextWriter orgwriter, string timestampFormat)
+        public ThreadAwareTextWriter(TextWriter fileWriter, TextWriter consoleOutput, string tsFormat)
         {
-            _innerWriter = innerWriter;
-            _orgwriter = orgwriter;
-            _timestampFormat = timestampFormat;
+            _fileWriter = fileWriter;
+            _consoleOutput = consoleOutput;
+            _tsFormat = tsFormat;
         }
 
         public override Encoding Encoding => Encoding.UTF8;
 
         public override void Write(char value)
         {
-            if (value == '\n')
-                FlushLine();
-            else if (value != '\r')
-                lock (_bufferLock)
-                {
-                    _lineBuffer.Append(value);
-                }
+            lock (_lock)
+            {
+                if (value == '\n') FlushBuffer();
+                else if (value != '\r') _lineBuffer.Append(value);
+            }
         }
 
-        public override void Write(string value)
+        public override void Write(string? value)
         {
-            if (value == null) return;
-
-            // 处理可能包含换行符的字符串
+            if (string.IsNullOrEmpty(value)) return;
             foreach (var c in value) Write(c);
         }
 
-        public override void WriteLine(string value)
+        public override void WriteLine(string? value)
         {
             Write(value);
             Write('\n');
         }
 
-        /// <summary>
-        ///     刷新当前行并添加格式
-        /// </summary>
-        private void FlushLine()
+        private void FlushBuffer()
         {
-            string lineContent;
+            var content = _lineBuffer.ToString();
+            _lineBuffer.Clear();
 
-            // 安全地获取当前行的内容
-            lock (_bufferLock)
+            if (string.IsNullOrWhiteSpace(content) && content.Length == 0)
             {
-                if (_lineBuffer.Length == 0)
-                {
-                    // 空行，只输出换行符
-                    _innerWriter.Write('\n');
-                    return;
-                }
-
-                lineContent = _lineBuffer.ToString();
-                _lineBuffer.Clear();
+                _consoleOutput.WriteLine();
+                _fileWriter.WriteLine();
+                return;
             }
 
-            // 构建格式化行
-            var threadId = Thread.CurrentThread.ManagedThreadId;
-            var threadName = GetThreadName(threadId);
-            var timestamp = DateTime.Now.ToString(_timestampFormat);
-            var callerLocation = GetCallerLocation();
+            var timestamp = DateTime.Now.ToString(_tsFormat);
+            var caller = GetCallerLocation();
+            
+            // 使用对齐格式化，让输出更像生产环境的日志
+            var formattedLine = $"[{timestamp}] [{caller}] {content}";
 
-            // var formattedLine = $"[{timestamp}][TID {threadId}][{threadName}][{callerLocation}]: {lineContent}";
-            var formattedLine = $"[{timestamp}] [{callerLocation}]: {lineContent}";
-
-            // 输出到原始控制台
-            try
-            {
-                Console.SetOut(_orgwriter);
-                Console.WriteLine(formattedLine);
-                Console.SetOut(this);
-            }
-            catch
-            {
-                // 如果原始控制台输出失败，恢复this作为输出
-                Console.SetOut(this);
-            }
-
-            // 输出到文件
-            _innerWriter.WriteLine(formattedLine);
+            _consoleOutput.WriteLine(formattedLine);
+            _fileWriter.WriteLine(formattedLine);
         }
 
         public override void Flush()
         {
-            lock (_bufferLock)
-            {
-                if (_lineBuffer.Length > 0) FlushLine();
-            }
-
-            _innerWriter.Flush();
+            lock (_lock) { if (_lineBuffer.Length > 0) FlushBuffer(); }
+            _fileWriter.Flush();
         }
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                Flush();
-                _innerWriter?.Dispose();
-            }
-
+            if (disposing) Flush();
             base.Dispose(disposing);
-        }
-
-        private string GetThreadName(int threadId)
-        {
-            if (_threadNames.TryGetValue(threadId, out var name)) return name;
-
-            // 自动为未命名的线程生成名称
-            var newName = $"T-{threadId}";
-            _threadNames.TryAdd(threadId, newName);
-            return newName;
         }
     }
 }
