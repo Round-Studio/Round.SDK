@@ -161,7 +161,8 @@ public class ConsoleRedirector : IDisposable
             var caller = GetCallerLocation();
             
             // 使用对齐格式化，让输出更像生产环境的日志
-            var formattedLine = $"[{timestamp}] [{caller}] {content}";
+            var formattedLine = $"[{timestamp}][#{Thread.CurrentThread.ManagedThreadId}][{caller}] {content}";
+            // 时间 线程ID 日志地址
 
             _consoleOutput.WriteLine(formattedLine);
             _fileWriter.WriteLine(formattedLine);
