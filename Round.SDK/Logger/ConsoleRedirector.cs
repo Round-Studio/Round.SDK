@@ -168,7 +168,10 @@ public class ConsoleRedirector : IDisposable
         {
             if (string.IsNullOrEmpty(value)) return;
             if (value.EndsWith("\n") || value.EndsWith("\r"))
-                value = value.Substring(0, value.Length - 2);
+            {
+                WriteLine(value.Substring(0, value.Length - 1));
+                return;
+            }
             Write(value);
             Write('\n');
         }
