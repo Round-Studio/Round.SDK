@@ -166,6 +166,9 @@ public class ConsoleRedirector : IDisposable
 
         public override void WriteLine(string? value)
         {
+            if (string.IsNullOrEmpty(value)) return;
+            if (value.EndsWith("\n") || value.EndsWith("\r"))
+                value = value.Substring(0, value.Length - 2);
             Write(value);
             Write('\n');
         }
