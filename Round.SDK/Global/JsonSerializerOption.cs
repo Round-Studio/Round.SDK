@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Text.Encodings.Web;
+using System.Text.Json;
 
 namespace Round.SDK.Global;
 
@@ -8,6 +9,7 @@ public class JsonSerializerOption
     {
         ReadCommentHandling = JsonCommentHandling.Skip, // 忽略注释
         AllowTrailingCommas = true, // 可选：也允许JSON末尾的逗号[citation:1]
-        WriteIndented = true
+        WriteIndented = true,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 }
