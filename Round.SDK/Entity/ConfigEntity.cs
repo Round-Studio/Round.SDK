@@ -71,7 +71,10 @@ public class ConfigEntity<T> where T : new()
         if (!File.Exists(Path))
         {
             Directory.CreateDirectory(System.IO.Path.GetDirectoryName(Path));
-            Save();
+            if (IsSave)
+                Save();
+            else
+                Data = new T();
             return;
         }
 
