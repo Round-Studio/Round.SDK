@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.CompilerServices; // 必须引用，用于识别异步状态机
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Round.SDK.Logger;
@@ -107,6 +107,30 @@ public class ConsoleRedirector : IDisposable
         return $"{className}.{methodName}";
     }
 
+    /// <summary>
+    /// 判断是否为错误信息（用于决定是否显示红色）
+    /// </summary>
+    private static bool IsErrorMessage(string content)
+    {
+        if (string.IsNullOrEmpty(content)) return false;
+        
+        // 错误关键词列表（不区分大小写）
+        var errorKeywords = new[]
+        {
+            "error",
+            "exception",
+            "fail",
+            "failed",
+            "fatal",
+            "crash",
+            "stack trace",
+            "   at "
+        };
+        
+        var lowerContent = content.ToLowerInvariant();
+        return errorKeywords.Any(keyword => lowerContent.Contains(keyword));
+    }
+
     private class ThreadAwareTextWriter : TextWriter
     {
         private readonly object _lock = new();
@@ -114,6 +138,7 @@ public class ConsoleRedirector : IDisposable
         private readonly TextWriter _consoleOutput;
         private readonly string _tsFormat;
         private readonly StringBuilder _lineBuffer = new();
+        private readonly object _consoleLock = new(); // 用于保护控制台颜色状态
 
         public ThreadAwareTextWriter(TextWriter fileWriter, TextWriter consoleOutput, string tsFormat)
         {
@@ -141,6 +166,12 @@ public class ConsoleRedirector : IDisposable
 
         public override void WriteLine(string? value)
         {
+            if (string.IsNullOrEmpty(value)) return;
+            if (value.EndsWith("\n") || value.EndsWith("\r"))
+            {
+                WriteLine(value.Substring(0, value.Length - 1));
+                return;
+            }
             Write(value);
             Write('\n');
         }
@@ -159,11 +190,64 @@ public class ConsoleRedirector : IDisposable
 
             var timestamp = DateTime.Now.ToString(_tsFormat);
             var caller = GetCallerLocation();
+            var threadId = Thread.CurrentThread.ManagedThreadId;
             
-            // 使用对齐格式化，让输出更像生产环境的日志
-            var formattedLine = $"[{timestamp}] [{caller}] {content}";
+            // 获取自定义线程名（如果有）
+            _threadNames.TryGetValue(threadId, out var threadName);
+            var threadDisplay = threadName != null ? $"{threadId}({threadName})" : threadId.ToString();
 
-            _consoleOutput.WriteLine(formattedLine);
+            // 格式化日志行（不含颜色，用于文件）
+            var formattedLine = $"[{timestamp}][#{threadDisplay}][{caller}] {content}";
+            
+            // 判断是否为错误信息
+            var isError = IsErrorMessage(content);
+            
+            // 带颜色的控制台输出（使用 Console API）
+            lock (_consoleLock)
+            {
+                try
+                {
+                    // 如果是错误信息，整体使用红色
+                    if (isError)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        _consoleOutput.WriteLine(formattedLine);
+                        Console.ResetColor();
+                    }
+                    else
+                    {
+                        // 正常信息：分段显示不同颜色
+                        // 时间戳 - 灰色
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        _consoleOutput.Write($"[{timestamp}]");
+                        
+                        // 线程ID - 青色
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        _consoleOutput.Write($"[#{threadDisplay}]");
+                        
+                        // 调用位置 - 黄色
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        _consoleOutput.Write($"[{caller}]");
+                        
+                        // 消息内容 - 白色
+                        Console.ForegroundColor = ConsoleColor.White;
+                        _consoleOutput.Write($" {content}");
+                        
+                        // 换行
+                        _consoleOutput.WriteLine();
+                        
+                        // 重置颜色
+                        Console.ResetColor();
+                    }
+                }
+                catch
+                {
+                    // 如果颜色设置失败（例如输出被重定向），回退到无颜色输出
+                    _consoleOutput.WriteLine(formattedLine);
+                }
+            }
+            
+            // 写入文件（无颜色）
             _fileWriter.WriteLine(formattedLine);
         }
 
