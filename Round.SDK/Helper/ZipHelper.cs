@@ -1,6 +1,6 @@
-using System.IO.Compression;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Tar;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace Round.SDK.Helper;
 
@@ -9,15 +9,53 @@ public class ZipHelper
     public static void CreateZipFile(string sourceFolder, string zipPath)
     {
         if (File.Exists(zipPath)) File.Delete(zipPath);
-        ZipFile.CreateFromDirectory(sourceFolder, zipPath);
+        System.IO.Compression.ZipFile.CreateFromDirectory(sourceFolder, zipPath);
     }
 
     public static void ExtractZipFile(string file, string extractDir, bool isExists = false)
     {
-        if (Directory.Exists(extractDir) && !isExists) return;
+        extractDir = Path.GetFullPath(extractDir);
+    
+        if (Directory.Exists(extractDir) && !isExists)
+        {
+            Console.WriteLine($"目录已存在，跳过解压: {extractDir}");
+            return;
+        }
+    
         Directory.CreateDirectory(extractDir);
-        ZipFile.ExtractToDirectory(file, extractDir, true);
-        Console.WriteLine($@"包已解压到: {extractDir}");
+    
+        using (var zipFile = new ZipFile(file))
+        {
+            foreach (ZipEntry entry in zipFile)
+            {
+                if (entry.IsDirectory) continue;
+            
+                string entryName = entry.Name.Replace('\\', Path.DirectorySeparatorChar)
+                    .Replace('/', Path.DirectorySeparatorChar);
+            
+                string fullPath = Path.Combine(extractDir, entryName);
+            
+                if (!fullPath.StartsWith(extractDir, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"跳过非法路径: {entryName}");
+                    continue;
+                }
+            
+                string? directory = Path.GetDirectoryName(fullPath);
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+            
+                using (var streamReader = zipFile.GetInputStream(entry))
+                using (var streamWriter = File.Create(fullPath))
+                {
+                    streamReader.CopyTo(streamWriter);
+                }
+            }
+        }
+    
+        Console.WriteLine($"包已解压到: {extractDir}");
     }
 
     public static void ExtractTarGz(string tarGzPath, string extractDir, bool isExists = false)
@@ -177,9 +215,9 @@ public class ZipHelper
 
     public static string GetTextFileContent(string zipPath, string targetFileName)
     {
-        using (ZipArchive archive = ZipFile.OpenRead(zipPath))
+        using ( System.IO.Compression.ZipArchive archive =  System.IO.Compression.ZipFile.OpenRead(zipPath))
         {
-            ZipArchiveEntry entry = archive.GetEntry(targetFileName);
+            System.IO.Compression.ZipArchiveEntry entry = archive.GetEntry(targetFileName);
             if (entry != null)
             {
                 using (StreamReader reader = new StreamReader(entry.Open()))
