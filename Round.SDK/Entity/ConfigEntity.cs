@@ -80,20 +80,60 @@ public class ConfigEntity<T> where T : new()
             return;
         }
 
-        var json = File.ReadAllText(Path);
+        var json = TryReadAllText(Path);
+        if (json == null)
+        {
+            // 文件存在但此刻读不到（多半是别的线程正在原子替换它）。
+            // 先用默认值顶着，既不抛异常也不回写，免得把用户配置覆盖成空白。
+            Console.WriteLine($@"读取配置失败，暂用默认值：{Path}");
+            Data = new T();
+            return;
+        }
+
         if (string.IsNullOrEmpty(json))
+        {
+            Data = new T();
             Save();
-        else
+            return;
+        }
+
+        try
+        {
+            Data = TypeInfo != null
+                ? JsonSerializer.Deserialize<T>(json, TypeInfo)
+                : JsonSerializer.Deserialize<T>(json, JsonSerializerOption.Options);
+        }
+        catch
+        {
+            Data = new T();
+            Save();
+        }
+    }
+
+    /// <summary>
+    /// 读取文件内容，遇到共享冲突（别的线程正在替换文件）时短暂重试。
+    /// 重试用尽仍失败则返回 null，由调用方决定降级策略。
+    /// </summary>
+    private static string? TryReadAllText(string path)
+    {
+        const int maxAttempts = 3;
+        for (var attempt = 1;; attempt++)
+        {
             try
             {
-                Data = TypeInfo != null
-                    ? JsonSerializer.Deserialize<T>(json, TypeInfo)
-                    : JsonSerializer.Deserialize<T>(json, JsonSerializerOption.Options);
+                return File.ReadAllText(path);
             }
-            catch
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                                       && attempt < maxAttempts)
             {
-                Save();
+                Thread.Sleep(20 * attempt);
             }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Console.WriteLine($@"读取 {path} 失败：{ex.Message}");
+                return null;
+            }
+        }
     }
 
     public void Save()
@@ -110,10 +150,63 @@ public class ConfigEntity<T> where T : new()
         var jsresult = TypeInfo != null
             ? JsonSerializer.Serialize(Data, TypeInfo)
             : JsonSerializer.Serialize(Data, JsonSerializerOption.Options);
-        File.WriteAllText(Path, jsresult);
+
+        WriteAllTextAtomic(Path, jsresult);
 
         // 触发保存后回调
         TriggerAfterSave();
+    }
+
+    // 同一份配置的写入串行化：并行读取目录（GetVersionConfigs 会多线程跑）
+    // 触发的重复保存不会互相踩到临时文件或替换动作
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, object> SaveGates =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// 原子写入：先写同目录临时文件，再整体替换目标文件。
+    /// 直接 WriteAllText 会先截断目标文件，别的线程（缓存刷新、FileSystemWatcher）
+    /// 一旦读到空文件或半个 JSON，轻则解析失败丢配置，重则在业务代码里 NRE。
+    /// 替换偶尔会因为目标文件正被读取（FileShare.Read 不带 Delete 共享）而失败，短重试即可。
+    /// </summary>
+    private static void WriteAllTextAtomic(string path, string content)
+    {
+        var directory = System.IO.Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(directory))
+            Directory.CreateDirectory(directory);
+
+        var gate = SaveGates.GetOrAdd(path, static _ => new object());
+        lock (gate)
+        {
+            const int maxAttempts = 5;
+            for (var attempt = 1;; attempt++)
+            {
+                var tempPath = $"{path}.{Guid.NewGuid():N}.tmp";
+                try
+                {
+                    File.WriteAllText(tempPath, content);
+                    File.Move(tempPath, path, true);
+                    return;
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                                           && attempt < maxAttempts)
+                {
+                    TryDelete(tempPath);
+                    Thread.Sleep(20 * attempt);
+                }
+            }
+        }
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+        catch
+        {
+            // 临时文件清理失败不影响主流程
+        }
     }
 
     private void TriggerBeforeSave()
